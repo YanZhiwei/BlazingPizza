@@ -1,4 +1,7 @@
-﻿namespace BlazingPizza.Data;
+﻿using BlazingPizza.Model;
+using BlazingPizza.Services;
+
+namespace BlazingPizza.Data;
 
 public class Pizza
 {
@@ -13,4 +16,9 @@ public class Pizza
     public bool Vegetarian { get; set; }
 
     public bool Vegan { get; set; }
+    public PizzaSpecial Special { get; set; }
+    public int SpecialId { get; set; }
+    public static object DefaultSize { get; set; }
+    public object Size { get; set; }
+    public List<PizzaTopping> Toppings { get; set; }
 }
