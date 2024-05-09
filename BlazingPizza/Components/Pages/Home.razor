@@ -1,5 +1,8 @@
 ﻿@page "/"
 @using BlazingPizza.Model
+@using BlazingPizza.Data
+@using BlazingPizza.Components.Shared
+@rendermode InteractiveServer
 @inject HttpClient HttpClient
 @inject NavigationManager NavigationManager
 <div class="main">
@@ -9,7 +12,7 @@
         {
             foreach (var special in _specials)
             {
-                <li style="background-image:url('@special.ImageUrl')">
+                <li @onclick="@(() => ShowConfigurePizzaDialog(special))" style="background-image: url('@special.ImageUrl')">
                     <div class="pizza-info">
                         <span class="title">@special.Name</span>
                         <span class="price">@special.GetFormattedBasePrice()</span>
@@ -19,6 +22,11 @@
         }
     </ul>
 </div>
+
+@if (showingConfigureDialog)
+{
+    <ConfigurePizzaDialog Pizza="configuringPizza"></ConfigurePizzaDialog>
+}
 
 
 @code
@@ -38,14 +46,25 @@
     //     base.OnInitialized();
     // }
 
-    /// <summary>
-    /// https://learn.microsoft.com/zh-cn/training/modules/interact-with-data-blazor-web-apps/6-share-data-in-blazor-applications
-    /// </summary>
-    /// <returns></returns>
+    Pizza configuringPizza;
+    bool showingConfigureDialog;
+
     protected override async Task OnInitializedAsync()
     {
         var baseUri = new Uri(NavigationManager.BaseUri);
         var fullUri = new Uri(baseUri, "/api/Specials");
         _specials = await HttpClient.GetFromJsonAsync<List<PizzaSpecial>>(fullUri);
+    }
+
+    void ShowConfigurePizzaDialog(PizzaSpecial special)
+    {
+        configuringPizza = new Pizza
+        {
+            Special = special,
+            SpecialId = special.Id,
+            Size = Pizza.DefaultSize
+        };
+
+        showingConfigureDialog = true;
     }
 }
