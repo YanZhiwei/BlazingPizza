@@ -1,7 +1,8 @@
 ﻿@page "/"
-@using BlazingPizza.Model
-@using BlazingPizza.Data
 @using BlazingPizza.Components.Shared
+@using BlazingPizza.Services
+@using BlazingPizza.Shared
+@inject OrderState OrderState
 @rendermode InteractiveServer
 @inject HttpClient HttpClient
 @inject NavigationManager NavigationManager
@@ -12,7 +13,7 @@
         {
             foreach (var special in _specials)
             {
-                <li @onclick="@(() => ShowConfigurePizzaDialog(special))" style="background-image: url('@special.ImageUrl')">
+                <li @onclick="@(() => OrderState.ShowConfigurePizzaDialog(special))" style="background-image: url('@special.ImageUrl')">
                     <div class="pizza-info">
                         <span class="title">@special.Name</span>
                         <span class="price">@special.GetFormattedBasePrice()</span>
@@ -23,48 +24,52 @@
     </ul>
 </div>
 
-@if (showingConfigureDialog)
-{
-    <ConfigurePizzaDialog Pizza="configuringPizza"></ConfigurePizzaDialog>
-}
 
+@if (OrderState.ShowingConfigureDialog)
+{
+    <ConfigurePizzaDialog Pizza="OrderState.ConfiguringPizza" OnCancel="OrderState.CancelConfigurePizzaDialog" OnConfirm="OrderState.ConfirmConfigurePizzaDialog"></ConfigurePizzaDialog>
+}
+<div class="sidebar">
+    @if (order.Pizzas.Any())
+    {
+        <div class="order-contents">
+            <h2>Your order</h2>
+
+            @foreach (var configuredPizza in order.Pizzas)
+            {
+                <div class="cart-item">
+                    <a @onclick="@(() => OrderState.RemoveConfiguredPizza(configuredPizza))" class="delete-item">x</a>
+                    <div class="title">@(configuredPizza.Size)" @configuredPizza.Special.Name</div>
+                    <div class="item-price">
+                        @configuredPizza.GetFormattedTotalPrice()
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-cart">Choose a pizza<br>to get started</div>
+    }
+
+    <div class="order-total @(order.Pizzas.Any() ? "" : "hidden")">
+        Total:
+        <span class="total-price">@order.GetFormattedTotalPrice()</span>
+        <a href="checkout" class="@(OrderState.Order.Pizzas.Count == 0 ? "btn btn-warning disabled" : "btn btn-warning")">
+            Order >
+        </a>
+    </div>
+</div>
 
 @code
 {
     private List<PizzaSpecial> _specials = new();
-    // protected override void OnInitialized()
-    // {
-    //     _specials.AddRange(new List<PizzaSpecial>
-    //     {
-    //         new PizzaSpecial { Name = "The Baconatorizor", BasePrice =  11.99M, Description = "It has EVERY kind of bacon", ImageUrl="img/pizzas/bacon.jpg"},
-    //         new PizzaSpecial { Name = "Buffalo chicken", BasePrice =  12.75M, Description = "Spicy chicken, hot sauce, and blue cheese, guaranteed to warm you up", ImageUrl="img/pizzas/meaty.jpg"},
-    //         new PizzaSpecial { Name = "Veggie Delight", BasePrice =  11.5M, Description = "It's like salad, but on a pizza", ImageUrl="img/pizzas/salad.jpg"},
-    //         new PizzaSpecial { Name = "Margherita", BasePrice =  9.99M, Description = "Traditional Italian pizza with tomatoes and basil", ImageUrl="img/pizzas/margherita.jpg"},
-    //         new PizzaSpecial { Name = "Basic Cheese Pizza", BasePrice =  11.99M, Description = "It's cheesy and delicious. Why wouldn't you want one?", ImageUrl="img/pizzas/cheese.jpg"},
-    //         new PizzaSpecial { Name = "Classic pepperoni", BasePrice =  10.5M, Description = "It's the pizza you grew up with, but Blazing hot!", ImageUrl="img/pizzas/pepperoni.jpg" }
-    //     });
-    //     base.OnInitialized();
-    // }
-
-    Pizza configuringPizza;
-    bool showingConfigureDialog;
+    Order order => OrderState.Order;
 
     protected override async Task OnInitializedAsync()
     {
         var baseUri = new Uri(NavigationManager.BaseUri);
         var fullUri = new Uri(baseUri, "/api/Specials");
         _specials = await HttpClient.GetFromJsonAsync<List<PizzaSpecial>>(fullUri);
-    }
-
-    void ShowConfigurePizzaDialog(PizzaSpecial special)
-    {
-        configuringPizza = new Pizza
-        {
-            Special = special,
-            SpecialId = special.Id,
-            Size = Pizza.DefaultSize
-        };
-
-        showingConfigureDialog = true;
     }
 }

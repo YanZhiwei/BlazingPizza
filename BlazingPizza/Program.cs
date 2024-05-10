@@ -1,5 +1,9 @@
 using BlazingPizza.Components;
-using BlazingPizza.Data;
+using BlazingPizza.Repository;
+using BlazingPizza.Repository.Entities;
+using BlazingPizza.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlazingPizza;
@@ -8,23 +12,25 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        //https://learn.microsoft.com/zh-cn/training/modules/interact-with-data-blazor-web-apps/7-exercise-share-data-in-blazor-applications
+        //https://learn.microsoft.com/zh-cn/training/modules/use-pages-routing-layouts-control-blazor-navigation/
         var builder = WebApplication.CreateBuilder(args);
-        builder.Services.AddControllers();
-        // Add services to the container.
-        builder.Services.AddRazorComponents()
-            .AddInteractiveServerComponents();
-        builder.Services.AddSingleton<PizzaService>();
-        builder.Services.AddHttpClient();
+
+
+        builder.Services.AddRazorPages();
+        builder.Services.AddRazorComponents().AddInteractiveServerComponents();
         builder.Services.AddDbContext<PizzaStoreContext>(options =>
             options.UseSqlite("Data Source=pizza.db")
-                .UseModel(BlazingPizza.PizzaStoreContextModel.Instance));
+                .UseModel(PizzaStoreContextModel.Instance));
 
         builder.Services.AddDefaultIdentity<PizzaStoreUser>(options => options.SignIn.RequireConfirmedAccount = true)
             .AddEntityFrameworkStores<PizzaStoreContext>();
 
         builder.Services.AddIdentityServer()
             .AddApiAuthorization<PizzaStoreUser, PizzaStoreContext>();
+
+        builder.Services.AddAuthentication()
+            .AddIdentityServerJwt();
+        builder.Services.AddScoped<OrderState>();
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -36,7 +42,9 @@ public class Program
         }
 
         app.UseHttpsRedirection();
-
+        app.UseAuthentication();
+        app.UseIdentityServer();
+        app.UseAuthorization();
         app.UseStaticFiles();
         app.UseAntiforgery();
 
@@ -47,7 +55,8 @@ public class Program
         using (var scope = scopeFactory.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<PizzaStoreContext>();
-            if (db.Database.EnsureCreated()) SeedData.Initialize(db);
+            if (db.Database.EnsureCreated())
+                SeedData.Initialize(db);
         }
 
         app.Run();

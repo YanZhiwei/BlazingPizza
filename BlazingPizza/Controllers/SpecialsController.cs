@@ -1,4 +1,4 @@
-﻿using BlazingPizza.Model;
+﻿using BlazingPizza.Shared;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
