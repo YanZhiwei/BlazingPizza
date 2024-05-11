@@ -1,15 +1,10 @@
-﻿using BlazingPizza.Repository;
-using BlazingPizza.Shared;
-using Duende.IdentityServer.EntityFramework.Options;
-using Microsoft.AspNetCore.ApiAuthorization.IdentityServer;
+﻿using BlazingPizza.Repository.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
-public class PizzaStoreContext : ApiAuthorizationDbContext<PizzaStoreUser>
+public class PizzaStoreContext : DbContext
 {
     public PizzaStoreContext(
-        DbContextOptions options,
-        IOptions<OperationalStoreOptions> operationalStoreOptions) : base(options, operationalStoreOptions)
+        DbContextOptions options) : base(options)
     {
     }
 
@@ -21,8 +16,6 @@ public class PizzaStoreContext : ApiAuthorizationDbContext<PizzaStoreUser>
 
     public DbSet<Topping> Toppings { get; set; }
 
-    public DbSet<NotificationSubscription> NotificationSubscriptions { get; set; }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -31,8 +24,5 @@ public class PizzaStoreContext : ApiAuthorizationDbContext<PizzaStoreUser>
         modelBuilder.Entity<PizzaTopping>().HasKey(pst => new { pst.PizzaId, pst.ToppingId });
         modelBuilder.Entity<PizzaTopping>().HasOne<Pizza>().WithMany(ps => ps.Toppings);
         modelBuilder.Entity<PizzaTopping>().HasOne(pst => pst.Topping).WithMany();
-
-        // Inline the Lat-Long pairs in Order rather than having a FK to another table
-        modelBuilder.Entity<Order>().OwnsOne(o => o.DeliveryLocation);
     }
 }

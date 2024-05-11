@@ -1,4 +1,4 @@
-﻿namespace BlazingPizza.Shared;
+﻿namespace BlazingPizza.Repository.Entities;
 
 /// <summary>
 /// Represents a pre-configured template for a pizza a user can order
@@ -7,13 +7,13 @@ public class PizzaSpecial
 {
     public int Id { get; set; }
 
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; set; }
 
     public decimal BasePrice { get; set; }
 
-    public string Description { get; set; } = string.Empty;
+    public string Description { get; set; }
 
-    public string ImageUrl { get; set; } = "img/pizzas/cheese.jpg";
+    public string ImageUrl { get; set; }
 
     public string GetFormattedBasePrice() => BasePrice.ToString("0.00");
 }

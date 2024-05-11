@@ -1,0 +1,68 @@
+﻿@page "/checkout"
+@using System.Diagnostics
+@using System.Text.Json
+@using BlazingPizza.Components.Layout
+@using BlazingPizza.Repository.Entities
+@using BlazingPizza.Services
+@inject OrderState OrderState
+@rendermode InteractiveServer
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@layout MainLayout
+
+<div class="main">
+    <div class="checkout-cols">
+        <div class="checkout-order-details">
+            <h4>Review order</h4>
+            @foreach (var pizza in Order.Pizzas)
+            {
+                <p>
+                    <strong>
+                        @(pizza.Size)"
+                        @pizza.Special.Name
+                        (£@pizza.GetFormattedTotalPrice())
+                    </strong>
+                </p>
+            }
+
+            <p>
+                <strong>
+                    Total price:
+                    £@Order.GetFormattedTotalPrice()
+                </strong>
+            </p>
+        </div>
+    </div>
+
+    <button class="checkout-button btn btn-warning" @onclick="PlaceOrder" disabled="@isSubmitting">
+        Place order
+    </button>
+</div>
+
+@code {
+    Order Order => OrderState.Order;
+
+    bool isSubmitting;
+
+    async Task PlaceOrder()
+    {
+        try
+        {
+            isSubmitting = true;
+            var baseUri = new Uri(NavigationManager.BaseUri);
+            var fullUri = new Uri(baseUri, "/api/Orders");
+            var test = JsonSerializer.Serialize(OrderState.Order);
+            var response = await HttpClient.PostAsJsonAsync(fullUri, OrderState.Order);
+            response.EnsureSuccessStatusCode();
+            var newOrderId = await response.Content.ReadFromJsonAsync<int>();
+            OrderState.ResetOrder();
+            NavigationManager.NavigateTo($"myorders/{newOrderId}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"PlaceOrder failed,error:{ex}");
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+}

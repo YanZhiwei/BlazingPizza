@@ -1,10 +1,7 @@
 using BlazingPizza.Components;
-using BlazingPizza.Repository;
-using BlazingPizza.Repository.Entities;
 using BlazingPizza.Services;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 
 namespace BlazingPizza;
 
@@ -12,25 +9,15 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        //https://learn.microsoft.com/zh-cn/training/modules/use-pages-routing-layouts-control-blazor-navigation/
+        //https://learn.microsoft.com/zh-cn/training/modules/blazor-improve-how-forms-work/2-attach-csharp-code-dom-events-blazor-event-handlers
         var builder = WebApplication.CreateBuilder(args);
-
-
         builder.Services.AddRazorPages();
         builder.Services.AddRazorComponents().AddInteractiveServerComponents();
         builder.Services.AddDbContext<PizzaStoreContext>(options =>
-            options.UseSqlite("Data Source=pizza.db")
-                .UseModel(PizzaStoreContextModel.Instance));
-
-        builder.Services.AddDefaultIdentity<PizzaStoreUser>(options => options.SignIn.RequireConfirmedAccount = true)
-            .AddEntityFrameworkStores<PizzaStoreContext>();
-
-        builder.Services.AddIdentityServer()
-            .AddApiAuthorization<PizzaStoreUser, PizzaStoreContext>();
-
-        builder.Services.AddAuthentication()
-            .AddIdentityServerJwt();
+            options.UseSqlite("Data Source=pizza.db"));
+        builder.Services.AddHttpClient();
         builder.Services.AddScoped<OrderState>();
+
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -42,12 +29,8 @@ public class Program
         }
 
         app.UseHttpsRedirection();
-        app.UseAuthentication();
-        app.UseIdentityServer();
-        app.UseAuthorization();
         app.UseStaticFiles();
         app.UseAntiforgery();
-
         app.MapRazorComponents<App>()
             .AddInteractiveServerRenderMode();
         app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");

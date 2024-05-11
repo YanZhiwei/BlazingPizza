@@ -1,4 +1,4 @@
-﻿using BlazingPizza.Shared;
+﻿using BlazingPizza.Repository.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,18 +6,13 @@ namespace BlazingPizza.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class SpecialsController : ControllerBase
+public class SpecialsController(PizzaStoreContext dbContext) : ControllerBase
 {
-    private readonly PizzaStoreContext _db;
-
-    public SpecialsController(PizzaStoreContext db)
-    {
-        _db = db;
-    }
-
     [HttpGet]
     public async Task<ActionResult<List<PizzaSpecial>>> GetSpecials()
     {
-        return (await _db.Specials.ToListAsync()).OrderByDescending(s => s.BasePrice).ToList();
+        return (await dbContext.Specials.ToListAsync()).OrderByDescending(s => s.BasePrice).ToList();
     }
+
+    
 }

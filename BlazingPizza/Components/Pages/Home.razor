@@ -1,13 +1,14 @@
 ﻿@page "/"
+@using BlazingPizza.Components.Layout
 @using BlazingPizza.Components.Shared
+@using BlazingPizza.Repository.Entities
 @using BlazingPizza.Services
-@using BlazingPizza.Shared
 @inject OrderState OrderState
 @rendermode InteractiveServer
 @inject HttpClient HttpClient
 @inject NavigationManager NavigationManager
+@layout MainLayout
 <div class="main">
-    <h1>Blazing Pizzas</h1>
     <ul class="pizza-cards">
         @if (_specials.Any())
         {

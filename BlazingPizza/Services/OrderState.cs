@@ -1,12 +1,29 @@
-﻿using BlazingPizza.Shared;
+﻿using BlazingPizza.Repository.Entities;
+using BlazingPizza.Shared;
 
 namespace BlazingPizza.Services;
 
 public class OrderState
 {
+    public OrderState()
+    {
+        Order = new Order
+        {
+            DeliveryAddress = new Address()
+            {
+                City = "test",
+                Name = "name",
+                Line1 = "test",
+                Line2 = "test",
+                Region = "test",
+                PostalCode = "test"
+            },
+            UserId = Guid.NewGuid().ToString("N")
+        };
+    }
     public bool ShowingConfigureDialog { get; private set; }
     public Pizza ConfiguringPizza { get; private set; }
-    public Order Order { get; } = new();
+    public Order Order { get; private set; }
 
     public void ShowConfigurePizzaDialog(PizzaSpecial special)
     {
@@ -33,7 +50,22 @@ public class OrderState
         ConfiguringPizza = null;
         ShowingConfigureDialog = false;
     }
-
+    public void ResetOrder()
+    {
+        Order = new Order
+        {
+            DeliveryAddress = new Address()
+            {
+                City = "test",
+                Name = "name",
+                Line1 = "test",
+                Line2 = "test",
+                Region = "test",
+                PostalCode = "test"
+            },
+            UserId = Guid.NewGuid().ToString("N")
+        };
+    }
     public void RemoveConfiguredPizza(Pizza pizza)
     {
         Order.Pizzas.Remove(pizza);
