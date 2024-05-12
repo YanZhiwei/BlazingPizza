@@ -1,9 +1,8 @@
 ﻿@page "/checkout"
-@using System.Diagnostics
-@using System.Text.Json
 @using BlazingPizza.Components.Layout
 @using BlazingPizza.Repository.Entities
 @using BlazingPizza.Services
+@implements IDisposable
 @inject OrderState OrderState
 @rendermode InteractiveServer
 @inject HttpClient HttpClient
@@ -11,58 +10,82 @@
 @layout MainLayout
 
 <div class="main">
-    <div class="checkout-cols">
-        <div class="checkout-order-details">
-            <h4>Review order</h4>
-            @foreach (var pizza in Order.Pizzas)
-            {
+    <EditForm Model="Order.DeliveryAddress" OnValidSubmit="PlaceOrder">
+        <div class="checkout-cols">
+            <div class="checkout-order-details">
+                <h4>Review order</h4>
+                @foreach (var pizza in Order.Pizzas)
+                {
+                    <p>
+                        <strong>
+                            @(pizza.Size)"
+                            @pizza.Special.Name
+                            (£@pizza.GetFormattedTotalPrice())
+                        </strong>
+                    </p>
+                }
+
                 <p>
                     <strong>
-                        @(pizza.Size)"
-                        @pizza.Special.Name
-                        (£@pizza.GetFormattedTotalPrice())
+                        Total price:
+                        £@Order.GetFormattedTotalPrice()
                     </strong>
                 </p>
-            }
-
-            <p>
-                <strong>
-                    Total price:
-                    £@Order.GetFormattedTotalPrice()
-                </strong>
-            </p>
+            </div>
+            <div class="checkout-delivery-address">
+                <h4>Deliver to...</h4>
+                @if (_isError)
+                {
+                    <div class="alert alert-danger">Please enter a name and address.</div>
+                }
+                <AddressEditor Address="Order.DeliveryAddress"/>
+            </div>
         </div>
-    </div>
 
-    <button class="checkout-button btn btn-warning" @onclick="PlaceOrder" disabled="@isSubmitting">
-        Place order
-    </button>
+        <button class="checkout-button btn btn-warning" type="submit" disabled="@_isError">
+            Place order
+        </button>
+        <DataAnnotationsValidator/>
+    </EditForm>
 </div>
 
 @code {
     Order Order => OrderState.Order;
+    bool _isError;
+    private EditContext _editContext;
 
-    bool isSubmitting;
+    protected void ShowError()
+    {
+        _isError = true;
+    }
+
+    protected override void OnInitialized()
+    {
+        _editContext = new EditContext(Order.DeliveryAddress);
+        _editContext.OnFieldChanged += HandleFieldChanged;
+        base.OnInitialized();
+    }
+
+    private void HandleFieldChanged(object sender, FieldChangedEventArgs e)
+    {
+        _isError = !_editContext.Validate();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _editContext.OnFieldChanged -= HandleFieldChanged;
+    }
 
     async Task PlaceOrder()
     {
-        try
-        {
-            isSubmitting = true;
-            var baseUri = new Uri(NavigationManager.BaseUri);
-            var fullUri = new Uri(baseUri, "/api/Orders");
-            var test = JsonSerializer.Serialize(OrderState.Order);
-            var response = await HttpClient.PostAsJsonAsync(fullUri, OrderState.Order);
-            response.EnsureSuccessStatusCode();
-            var newOrderId = await response.Content.ReadFromJsonAsync<int>();
-            OrderState.ResetOrder();
-            NavigationManager.NavigateTo($"myorders/{newOrderId}");
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"PlaceOrder failed,error:{ex}");
-            NavigationManager.NavigateTo("/");
-        }
+        var baseUri = new Uri(NavigationManager.BaseUri);
+        var fullUri = new Uri(baseUri, "/api/Orders");
+        var response = await HttpClient.PostAsJsonAsync(fullUri, OrderState.Order);
+        response.EnsureSuccessStatusCode();
+        var newOrderId = await response.Content.ReadFromJsonAsync<int>();
+        OrderState.ResetOrder();
+        NavigationManager.NavigateTo($"myorders/{newOrderId}");
     }
 
 }
