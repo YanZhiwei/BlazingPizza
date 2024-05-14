@@ -1,11 +1,11 @@
 ﻿@page "/myorders/{orderId:int}"
-@using BlazingPizza.Components.Layout
-@using BlazingPizza.Repository.Entities
 @rendermode InteractiveServer
 @inject NavigationManager NavigationManager
 @inject HttpClient HttpClient
 @layout MainLayout
-
+@using BlazingPizza.Components.Layout
+@using BlazingPizza.Repository.Entities
+@implements IDisposable
 <div class="main">
     @if (invalidOrder)
     {
@@ -37,6 +37,12 @@
                 </p>
             </div>
             <div class="track-order-body">
+                @if (IsOrderIncomplete)
+                {
+                    <div class="spinner-grow text-danger float-right" role="status">
+                        <span class="sr-only">Checking your order status...</span>
+                    </div>
+                }
                 <div class="track-order-details">
                     @foreach (var pizza in orderWithStatus.Order.Pizzas)
                     {
@@ -57,16 +63,30 @@
 @code {
     [Parameter] public int OrderId { get; set; }
 
+    bool IsOrderIncomplete =>
+        orderWithStatus is null || orderWithStatus.IsDelivered == false;
+
+    readonly PeriodicTimer timer = new(TimeSpan.FromSeconds(3));
     OrderWithStatus orderWithStatus;
-    bool invalidOrder = false;
+    bool invalidOrder;
 
     protected override async Task OnParametersSetAsync()
     {
+        await GetLatestOrderStatusUpdatesAsync();
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        return firstRender ? StartPollingTimerAsync() : Task.CompletedTask;
+    }
+
+    async Task GetLatestOrderStatusUpdatesAsync()
+    {
         try
-        {  var baseUri = new Uri(NavigationManager.BaseUri);
+        {
+            var baseUri = new Uri(NavigationManager.BaseUri);
             var fullUri = new Uri(baseUri, $"/api/Orders/{OrderId}");
-            orderWithStatus = await HttpClient.GetFromJsonAsync<OrderWithStatus>(
-                fullUri);
+            orderWithStatus = await HttpClient.GetFromJsonAsync<OrderWithStatus>(fullUri);
         }
         catch (Exception ex)
         {
@@ -74,4 +94,20 @@
             Console.Error.WriteLine(ex);
         }
     }
+
+    async Task StartPollingTimerAsync()
+    {
+        while (IsOrderIncomplete && await timer.WaitForNextTickAsync())
+        {
+            await GetLatestOrderStatusUpdatesAsync();
+            StateHasChanged();
+        }
+    }
+
+
+    public void Dispose()
+    {
+        timer.Dispose();
+    }
+
 }

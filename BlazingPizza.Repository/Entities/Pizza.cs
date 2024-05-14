@@ -1,7 +1,7 @@
 ﻿namespace BlazingPizza.Repository.Entities;
 
 /// <summary>
-/// Represents a customized pizza as part of an order
+///     Represents a customized pizza as part of an order
 /// </summary>
 public class Pizza
 {
@@ -21,11 +21,6 @@ public class Pizza
 
     public List<PizzaTopping> Toppings { get; set; }
 
-    public decimal GetBasePrice()
-    {
-        return ((decimal)Size / (decimal)DefaultSize) * Special.BasePrice;
-    }
-
     public decimal GetTotalPrice()
     {
         return GetBasePrice();
@@ -34,5 +29,12 @@ public class Pizza
     public string GetFormattedTotalPrice()
     {
         return GetTotalPrice().ToString("0.00");
+    }
+
+    public decimal GetBasePrice()
+    {
+        return Special is { FixedSize: not null }
+            ? Special.BasePrice
+            : (decimal)Size / DefaultSize * Special?.BasePrice ?? 1;
     }
 }

@@ -9,7 +9,7 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        //https://learn.microsoft.com/zh-cn/training/modules/blazor-build-rich-interactive-components/2-create-user-interfaces-blazor-components
+        //https://learn.microsoft.com/zh-cn/training/modules/blazor-build-rich-interactive-components/5-exercise-improve-app-interactivity-lifecycle-events
         var builder = WebApplication.CreateBuilder(args);
         builder.Services.AddRazorPages();
         builder.Services.AddRazorComponents().AddInteractiveServerComponents();
